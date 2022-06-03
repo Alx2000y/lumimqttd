@@ -1,0 +1,22 @@
+{
+"mqtt_host": "localhost",
+"mqtt_port": 1883,
+"mqtt_keepalive": 60,
+"mqtt_user": "",
+"mqtt_user_pw": "",
+"mqtt_retain": true,
+"auto_discovery": true,
+"topic": "lumi/{MAC}/",
+//"device_id":"001", //default - mac address
+"connect_retries": 10,
+"log_level": 3,
+"readinterval": 1,
+"treshold": 30,
+"red_led": "/sys/class/leds/red/brightness",
+"green_led": "/sys/class/leds/green/brightness",
+"blue_led": "/sys/class/leds/blue/brightness",
+"lux_file": "/sys/bus/iio/devices/iio:device0/in_voltage5_raw",
+"cache_tts_path": "", // if empty - no cache
+"ya_tts_api_key": "",
+"ya_tts_folder_id": ""
+}

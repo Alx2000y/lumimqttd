@@ -1,0 +1,16 @@
+menu "Configuration"
+
+config LUMIMQTTD_BLE
+	bool "Enable support for ble"
+    depends on PACKAGE_lumimqttd || PACKAGE_lumimqttd-mpd
+	select PACKAGE_bluez-libs
+    select PACKAGE_kmod-bluetooth
+    select PACKAGE_bluez-daemon
+    select PACKAGE_bluez-utils
+	default n
+
+config LUMIMQTTD_CPUTEMP
+	bool "Report cpu temperature"
+	default y
+
+endmenu

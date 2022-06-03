@@ -1,0 +1,3 @@
+*.sh
+src/*.json
+*.log
