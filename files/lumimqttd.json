@@ -6,7 +6,7 @@
 "mqtt_user_pw": "",
 "mqtt_retain": true,
 "auto_discovery": true,
-"topic": "lumi/{MAC}/",
+"topic": "lumi/{device_id}/",
 //"device_id":"001", //default - mac address
 "connect_retries": 10,
 "log_level": 3,

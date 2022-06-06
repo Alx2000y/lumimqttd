@@ -36,7 +36,7 @@ int cfg_load(char *file)
 	config.mqtt_keepalive = 60;
 	config.mqtt_retain = 0;
 	config.device_id = getmac("001");
-	config.topic = strdup("lumi/{MAC}/");
+	config.topic = strdup("lumi/{device_id}/");
 	config.red_led = strdup("/sys/class/leds/red/brightness");
 	config.green_led = strdup("/sys/class/leds/green/brightness");
 	config.blue_led = strdup("/sys/class/leds/blue/brightness");
@@ -172,13 +172,13 @@ int cfg_load(char *file)
 			config.verbosity = json_object_get_int(val);
 		}
 	}
-    if(strstr(config.topic, "{MAC}") != NULL) {
+    if(strstr(config.topic, "{device_id}") != NULL) {
         char* tmp=malloc(strlen(config.topic)+strlen(config.device_id));
 
-        int len=strstr(config.topic, "{MAC}")-config.topic;
+        int len=strstr(config.topic, "{device_id}")-config.topic;
         strncpy(string, config.topic, len);
         string[len]=0;
-        sprintf(tmp, "%s%s%s", string, config.device_id, config.topic + len + 5);
+        sprintf(tmp, "%s%s%s", string, config.device_id, config.topic + len + 11);
         config.topic=strdup(tmp);
         free(tmp);
     }
