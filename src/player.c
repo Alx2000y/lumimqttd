@@ -11,7 +11,7 @@ int play_on_message(char *id, char *payload, int len)
         _syslog(LOG_INFO, "sound %s %s\n", id, payload);
         if (len > 0)
         {
-            temp = malloc(len);
+            temp = malloc(len + 1);
             strncpy(temp, payload, len);
         }
         else
@@ -24,25 +24,24 @@ int play_on_message(char *id, char *payload, int len)
         call_play(temp,len,0);
 #endif
         _syslog(LOG_INFO, "sound ended\n");
+        if(temp != NULL)
+        	free(temp);
     } else
         return 0;
     return 1;
 }
-static void sockpipe_thread(int tfd)
+void sockpipe_thread(int tfd)
 {
     int z;
     unsigned char buf[PIPE_BUF];
     z = read(sock, buf, PIPE_BUF);
     unsigned char *start = strstr(buf, "\r\n\r\n");
     write(tfd, start + 4, z - ((start + 4) - (unsigned char *)buf));
-    //_syslog(LOG_INFO, "sockstart: %s\n",start + 4);
     while (1)
     {
         z = read(sock, buf, PIPE_BUF);
         if (z <= 0 || stopplay == 1)
             break;
-    //_syslog(LOG_INFO, "sockpipe ssl end -1: %d\n",PIPE_BUF);
-
         write(tfd, buf, z);
     }
     _syslog(LOG_INFO, "sockpipe ssl end 0: %d\n",PIPE_BUF);
@@ -53,20 +52,18 @@ static void sockpipe_thread(int tfd)
 
 }
 
-static void sockpipessl_thread(int tfd)
+void sockpipessl_thread(int tfd)
 {
     int z;
     unsigned char buf[PIPE_BUF];
     z = SSL_read(ssl, buf, PIPE_BUF);
     unsigned char *start = strstr(buf, "\r\n\r\n");
     write(tfd, start + 4, z - ((start + 4) - (unsigned char *)buf));
-    //_syslog(LOG_INFO, "sockstart: %s\n",start + 4);
     while (1)
     {
         z = SSL_read(ssl, buf, PIPE_BUF);
         if (z <= 0 || stopplay == 1)
             break;
-	    //_syslog(LOG_INFO, "sockpipe ssl end -1: %d\n",PIPE_BUF);
         write(tfd, buf, z);
     }
     _syslog(LOG_INFO, "sockpipe ssl end 0: %d\n",PIPE_BUF);
@@ -78,14 +75,14 @@ static void sockpipessl_thread(int tfd)
 
 }
 
-static int return_sock(char *url)
+int return_sock(char *url)
 {
     SSL_CTX *ctx;
     SSL_METHOD *meth;
 
     char *server = NULL;
     char *file = NULL, *sport = NULL;
-    int i, len = strlen(url), port = 80, https = 0;
+    int i, len = strlen(url), port = 80, https = 0, ret=0;
     if (strncmp(url, "https", 5) == 0)
     {
         https = 1;
@@ -126,16 +123,14 @@ static int return_sock(char *url)
     if ((hent = gethostbyname(server)) == NULL)
     {
         _syslog(LOG_ERR, "gethostbyname error %s", server);
-        free(server);
-        free(file);
-        return -1;
+        ret = -1;
+        goto out;
     }
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         _syslog(LOG_ERR, "socket error");
-        free(server);
-        free(file);
-        return -1;
+        ret = -1;
+        goto out;
     }
     struct sockaddr_in add;
     add.sin_family = AF_INET;
@@ -144,9 +139,8 @@ static int return_sock(char *url)
     if (connect(sock, (struct sockaddr *)&add, sizeof(add)))
     {
         _syslog(LOG_ERR, "connect error");
-        free(server);
-        free(file);
-        return -1;
+        ret = -1;
+        goto out;
     }
     if (https)
     {
@@ -154,7 +148,8 @@ static int return_sock(char *url)
         if ((ssl) == NULL)
         {
             _syslog(LOG_ERR, "ssl error");
-            return -1;
+	        ret = -1;
+    	    goto out;
         }
 
         SSL_set_fd(ssl, sock);
@@ -162,7 +157,8 @@ static int return_sock(char *url)
         if ((i) == -1)
         {
             _syslog(LOG_ERR, "ssl connect error");
-            return -1;
+    	    ret = -1;
+	        goto out;
         }
 
         SSL_write(ssl, file, strlen(file));
@@ -174,8 +170,6 @@ static int return_sock(char *url)
     pipe(pfd);
     mpg123_open_fd_64(mh, pfd[0]);
 
-    //if(sockplay_thread) pthread_cancel(sockplay_thread);
-
     if (https)
     {
         pthread_create(&sockplay_thread, NULL, (void *(*)(void *))sockpipessl_thread, (void *)pfd[1]);
@@ -184,20 +178,18 @@ static int return_sock(char *url)
     {
         pthread_create(&sockplay_thread, NULL, (void *(*)(void *))sockpipe_thread, (void *)pfd[1]);
     }
+    pthread_detach(sockplay_thread);
+out:
     free(server);
     free(file);
 
-    return 0;
+    return ret;
 }
 void exit_play()
 {
-    _syslog(LOG_INFO, "out123_del\n");
     close(pfd[0]);
     out123_del(ao);
-    /* It's really to late for error checks here;-) */
-    _syslog(LOG_INFO, "mpg123_close\n");
     mpg123_close(mh);
-    _syslog(LOG_INFO, "mpg123_delete\n");
     mpg123_delete(mh);
     _syslog(LOG_INFO, "mpg123_exit\n");
     mpg123_exit();
@@ -227,7 +219,7 @@ void call_play(char *playfile, int len, int channel)
     stop_play();
     if (playfile != NULL && len > 0)
     {
-        playargs.playfile = malloc(len);
+        playargs.playfile = malloc(len + 1);
         strncpy(playargs.playfile, playfile, len);
         playargs.playfile[len]=0;
         playargs.slen=len;
@@ -253,6 +245,7 @@ void *playc(void *args)
         outfile=strdup("alert");
     ret = play(playarg->playfile, outfile);
     _syslog(LOG_INFO, "end play %d\n", ret);
+    if(outfile != NULL) free(outfile);
     return 0;
 }
 int play(char *playfile, char *outfile)
@@ -263,7 +256,6 @@ int play(char *playfile, char *outfile)
     long rate;
     unsigned char *buf = NULL;
     size_t buf_size = 0;
-    const char *encname;
     char *driver = "alsa";
     
     int err = MPG123_OK;
@@ -318,10 +310,9 @@ int play(char *playfile, char *outfile)
 
     mpg123_getformat(mh, &rate, &channels, &encoding);
     _syslog(LOG_INFO, "mpgformat %d %d %d\n", rate, channels, encoding);
-
-    encname = out123_enc_name(encoding);
-    _syslog(LOG_INFO, "Playing with %i channels and %li Hz, encoding %s.\n", channels, rate, encname ? encname : "???");
-
+	if(config.verbosity > 4) {
+	    _syslog(LOG_INFO, "Playing with %i channels and %li Hz, encoding %s.\n", channels, rate, out123_enc_name(encoding));
+	}
     if (out123_start(ao, rate, channels, encoding) || out123_getformat(ao, NULL, NULL, NULL, &framesize))
     {
         _syslog(LOG_ERR, "Cannot start output / get framesize: %s\n", out123_strerror(ao));
@@ -330,7 +321,7 @@ int play(char *playfile, char *outfile)
     }
 
     buf_size = mpg123_outblock(mh);
-    buf = malloc(buf_size);
+    buf = malloc(buf_size + 1);
 
     do
     {
@@ -342,7 +333,6 @@ int play(char *playfile, char *outfile)
             _syslog(LOG_ERR, "Warning: written less than gotten from libmpg123: %li != %li\n", (long)played, (long)done);
         }
         samples += played / framesize;
-        //_syslog(LOG_DEBUG, "played %d of %d samples %d stop %i buf_size %d.\n", played, done, samples, stopplay, buf_size);
     } while (done && err == MPG123_OK && stopplay != 1);
 
     free(buf);

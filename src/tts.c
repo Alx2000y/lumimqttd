@@ -13,6 +13,7 @@
 #include <openssl/err.h>
 #include <openssl/md5.h>
 
+
 tts_t tts;
 const char *lvoices[] = {"google", "oksana", "jane", "omazh", "zahar", "ermil", "silaerkan", "erkanyavas", "alyss", "nick", "alena", "filipp", NULL};
 const char *lvoicessex[] = {"F", "F", "F", "F", "M", "M", "F", "M", "F", "M", "F", "M", NULL};
@@ -21,8 +22,10 @@ const char *lemotions[] = {"good", "neutral", "evil", NULL};
 
 void init_tts()
 {
-    if (strlen(config.ya_tts_api_key) < 10)
+    if (strlen(config.ya_tts_api_key) < 10) {
+   	    tts.voice = strdup("google");
         return;
+    }
     char *topic, *message;
 
     tts.voice = strdup("alyss");
@@ -81,11 +84,57 @@ void init_tts()
     free(topic);
     free(message);
 }
-int tts_on_message(char *id, char *payload){
-
-    if (strcmp(id, "tts/set") == 0 || strcmp(id, "say") == 0 || strcmp(id, "tts/say") == 0)
+int tts_on_message(char *id, char *payload, int len){
+	struct json_tokener *tok;
+	struct json_object *jobj;
+    tts.updatecache=0;
+    if (strcmp(id, "tts/set") == 0 || strcmp(id, "say") == 0 || strcmp(id, "tts/say") == 0 || strcmp(id, "tts") == 0)
     {
-        tts_say(payload);
+    	if (strchr(payload, '{')) {
+    		char *text;
+            enum json_type type;
+            tok = json_tokener_new();	
+            if (!tok)		return 0;
+            jobj = json_tokener_parse_ex(tok, (char *)payload, len);	
+            if (tok->err != json_tokener_success)	{
+	            _syslog(LOG_ERR, "json fail %s \n", payload);
+	            return 0;
+	        }	
+            tts_cache(config.cache_all);
+            json_tokener_free(tok);
+            json_object_object_foreach(jobj, key, val)
+            {
+                type = json_object_get_type(val);
+                if (strcmp(key, "text") == 0 || strcmp(key, "say") == 0)
+                {
+                	text=strdup(json_object_get_string(val));
+                }
+                if (strcmp(key, "cache") == 0)
+                {
+                    tts_cache(json_object_get_int(val));
+                }
+                if (strcmp(key, "updatecache") == 0)
+                {
+                    tts.updatecache=1;
+                }
+                if (strcmp(key, "voice") == 0)
+                {
+                    tts_voice(json_object_get_string(val));
+                }
+                if (strcmp(key, "speed") == 0)
+                {
+                    tts_speed(json_object_get_int(val));
+                }
+                if (strcmp(key, "emotion") == 0)
+                {
+                    tts_emotion(json_object_get_string(val));
+                }
+            }
+            json_object_put(jobj);
+            tts_say(text);
+            free(text);
+        }else
+        	tts_say(payload);
     }
     else if (strcmp(id, "tts/voice/to") == 0 || strcmp(id, "tts/voice/set") == 0 || strcmp(id, "ttsvoice/set") == 0)
     {
@@ -98,12 +147,19 @@ int tts_on_message(char *id, char *payload){
     else if (strcmp(id, "tts/speed/to") == 0 || strcmp(id, "tts/speed/set") == 0 || strcmp(id, "ttsspeed/set") == 0)
     {
         tts_speed(atoi(payload));
-    }else
+    }
+    else if (strcmp(id, "tts/cache") == 0 || strcmp(id, "tts/cache/set") == 0 || strcmp(id, "ttscache/set") == 0)
+    {
+        tts_cache(atoi(payload));
+    }
+    else
         return 0;
     return 1;
 }
 void tts_say(char *text)
 {
+	if(tts.text != NULL) free(tts.text);
+
     if (strlen(text) == 0)
         return;
     _syslog(LOG_INFO, "tts say start %s\n", text);
@@ -131,6 +187,11 @@ void tts_voice(char *text)
             return;
         }
 }
+void tts_cache(uint8_t state)
+{
+    _syslog(LOG_INFO, "try tts cache set to %d\n", state);
+    tts.cache = state>0 ? 1 : 0 ;
+}
 void tts_emotion(char *text)
 {
     _syslog(LOG_INFO, "try tts emotion set to %s\n", text);
@@ -157,18 +218,24 @@ void tts_speed(uint8_t speed)
 void *ttssay_thread(void *args)
 {
     _syslog(LOG_INFO, "tts start %s\n", tts.text);
-    char *cachefname=strdup("/tmp/tts.tmp");
-    int google=strcmp(tts.voice, "google") == 0;
-    if (strlen(config.ya_tts_api_key) < 10) 
+    char *cachefname = malloc(strlen(config.cache_tts_path) + MD5_DIGEST_LENGTH * 2 + 11 + 1);
+    sprintf(cachefname, "/tmp/tts.tmp");
+    int google=0;
+
+    if (strlen(config.ya_tts_api_key) < 10 || strncmp(tts.voice, "google",6) == 0) 
         google = 1;
+
+	_syslog(LOG_INFO, "tts engine %d\n", google);
 
     if(strlen(config.cache_tts_path)>0) {
         FILE *file;
+        //mkdir(config.cache_tts_path, S_IRWXU);
         char hash[MD5_DIGEST_LENGTH];
         MD5(tts.text, strlen(tts.text), hash);
-        cachefname = malloc(strlen(config.cache_tts_path) + MD5_DIGEST_LENGTH + 6);
-        sprintf(cachefname, "%s%s-%d.mp3", config.cache_tts_path, hash, google);
-        if ((file = fopen(cachefname, "r")))
+        //cachefname = malloc(strlen(config.cache_tts_path) + MD5_DIGEST_LENGTH * 2 + 11);
+        sprintf(cachefname, "%stts-%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x-%d.mp3", config.cache_tts_path, 
+        hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15], google);
+        if (tts.updatecache == 0 && (file = fopen(cachefname, "r")))
         {
             fclose(file);
             if(google != 0) {
@@ -178,14 +245,28 @@ void *ttssay_thread(void *args)
                 call_play(cachefname,strlen(cachefname),1);
 #endif
             }else{
-                char *sst = malloc(strlen(cachefname) + 42);
+                char *sst = malloc(strlen(cachefname) + 43);
                 sprintf(sst, "aplay -traw -c1 -r48000 -fS16_LE -D alert %s", cachefname);
                 system(sst);
                 free(sst);
             }
+
             free(cachefname);
             return 1;
         }
+	    if(tts.cache == 0) 
+    		sprintf(cachefname, "/tmp/tts.tmp");
+	    else if(config.cache_make_index == 1 && tts.updatecache == 0) {
+	    	FILE *fp2;
+	    	char *cacheindex = malloc(strlen(config.cache_tts_path) + 14);
+	    	sprintf(cacheindex, "%stts-index.txt", config.cache_tts_path);
+    		fp2 = fopen(cacheindex, "a+");
+    		if (!fp2) {
+    			printf("Unable to open/detect file(s)\n");
+    		}
+    		fprintf(fp2, "%s\t%s\n", cachefname, tts.text);
+    		fclose(fp2);
+    	}
     }
     int err;
     SSL_CTX *ctx;
@@ -201,10 +282,10 @@ void *ttssay_thread(void *args)
         return -1;
     }
     int port = 443;
-    char *temp = malloc(strlen(tts.text) * 6 + 10);
+    char *temp = malloc(strlen(tts.text) * 6 + 11);
     temp = URIEncode(tts.text);
 
-    char *file = malloc(608 + strlen(config.ya_tts_api_key) + strlen(config.ya_tts_folder_id) + strlen(temp));
+    char *file = malloc(609 + strlen(config.ya_tts_api_key) + strlen(config.ya_tts_folder_id) + strlen(temp));
     if(google != 0) {
         sprintf(file, "GET /translate_tts?ie=UTF-8&tl=ru&client=tw-ob&q=%s HTTP/1.1\r\nHost: translate.google.com\r\nUser-Agent: lumimqttd/%s (lumi)\r\nAccept: */*\r\nAccept-Encoding: identity\r\nConnection: Keep-Alive\r\n\r\n",temp, VERSION);
         _syslog(LOG_DEBUG, "get: %s\n\n", file);
@@ -357,7 +438,6 @@ void *ttssay_thread(void *args)
 
     close(sock);
     free(file);
-    free(cachefname);
     fclose(tfd);
     if(google != 0) {
 #ifdef USE_MPD
@@ -366,16 +446,18 @@ void *ttssay_thread(void *args)
         call_play(cachefname,strlen(cachefname),1);
 #endif
     }else{
-        char *sst = malloc(strlen(cachefname) + 42);
+        char *sst = malloc(strlen(cachefname) + 43);
         sprintf(sst, "aplay -traw -c1 -r48000 -fS16_LE -D alert %s", cachefname);
         system(sst);
         free(sst);
     }
     _syslog(LOG_INFO, "tts end\n");
+    free(cachefname);
+    tts_cache(config.cache_all);
     return 0;
 }
 
-static int isURIChar(const char ch)
+int isURIChar(const char ch)
 {
     if (isalnum(ch))
         return 1;

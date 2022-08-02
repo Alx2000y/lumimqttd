@@ -9,8 +9,13 @@ int leds_on_message(char *id, char *payload, int len)
     if (strcmp(id, "light/set") == 0)
     {
         _syslog(LOG_INFO, "Light set to %s \nlen: %d\n", payload,len);
-        //memcpy(&leds, &curstateleds, sizeof leds_rgb);
         struct leds_rgb leds = get_leds();
+        if (strcmp(payload, "ON") == 0){
+        	leds.state = 1;
+        } else
+        if (strcmp(payload, "OFF") == 0){
+        	leds.state = 0;
+        } else
         if (strlen(payload) == 7)
         {
             temp = strdup(payload);
@@ -36,9 +41,6 @@ int leds_on_message(char *id, char *payload, int len)
 	            return 0;
 	        }	
             json_tokener_free(tok);
-            //json_object *jobj = json_tokener_parse(payload);
-        _syslog(LOG_INFO, "Light set to %s \n", payload);
-
             json_object_object_foreach(jobj, key, val)
             {
                 type = json_object_get_type(val);
@@ -53,7 +55,7 @@ int leds_on_message(char *id, char *payload, int len)
                         leds.state = json_object_get_double(val) > 0 ? 1 : 0;
                         break;
                     case json_type_int:
-                        leds.state = json_object_get_int(val) > 0 ? 1 : 0;
+                        leds.state = (uint8_t)json_object_get_int(val) > 0 ? 1 : 0;
                         break;
                     case json_type_string:
                         leds.state = 0;
@@ -72,24 +74,33 @@ int leds_on_message(char *id, char *payload, int len)
                 }
                 if (strcmp(key, "brightness") == 0)
                 {
-                    leds.brightness = json_object_get_int(val);
+                    leds.brightness = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "brightness: %d\n", leds.brightness);
                 }
-                if (strcmp(key, "speed") == 0)
+                if (strcmp(key, "duration") == 0)
                 {
-                    leds.speed = json_object_get_int(val);
-                    _syslog(LOG_INFO, "speed: %d\n", leds.speed);
+                    leds.duration = (uint8_t)json_object_get_int(val);
+                    _syslog(LOG_INFO, "duration: %d\n", leds.duration);
+                }
+                if (strcmp(key, "pattern") == 0)
+                {
+                    if (ledpattern != NULL) free(ledpattern);
+                    ledpattern = strdup(json_object_get_string(val));
                 }
                 if (strcmp(key, "effect") == 0)
                 {
                     leds.effect = 0;
-                    if (strncmp(json_object_get_string(val), "transition", 10) == 0)
+                    if (strncmp(json_object_get_string(val), "fade", 4) == 0)
                     {
                         leds.effect = 1;
                     }
                     if (strncmp(json_object_get_string(val), "pattern", 7) == 0)
                     {
                         leds.effect = 2;
+                    }
+                    if (strncmp(json_object_get_string(val), "wheel", 5) == 0)
+                    {
+                        leds.effect = 3;
                     }
                 }
                 if (strcmp(key, "color") == 0)
@@ -108,17 +119,17 @@ int leds_on_message(char *id, char *payload, int len)
                             exists = json_object_object_get_ex(jcolor, "r", &jtmp);
                             if (exists)
                             {
-                                leds.r = json_object_get_int(jtmp);
+                                leds.r = (uint8_t)json_object_get_int(jtmp);
                             }
                             exists = json_object_object_get_ex(jcolor, "g", &jtmp);
                             if (exists)
                             {
-                                leds.g = json_object_get_int(jtmp);
+                                leds.g = (uint8_t)json_object_get_int(jtmp);
                             }
                             exists = json_object_object_get_ex(jcolor, "b", &jtmp);
                             if (exists)
                             {
-                                leds.b = json_object_get_int(jtmp);
+                                leds.b = (uint8_t)json_object_get_int(jtmp);
                             }
                         }
                         _syslog(LOG_INFO, "color: %d\n", type);
@@ -126,35 +137,36 @@ int leds_on_message(char *id, char *payload, int len)
                 }
                 if (strcmp(key, "r") == 0)
                 {
-                    leds.r = json_object_get_int(val);
+                    leds.r = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color red: %d\n", leds.r);
                 }
                 if (strcmp(key, "g") == 0)
                 {
-                    leds.g = json_object_get_int(val);
+                    leds.g = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color green: %d\n", leds.g);
                 }
                 if (strcmp(key, "b") == 0)
                 {
-                    leds.b = json_object_get_int(val);
+                    leds.b = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color blue: %d\n", leds.b);
                 }
                 if (strcmp(key, "red") == 0)
                 {
-                    leds.r = json_object_get_int(val);
+                    leds.r = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color red: %d\n", leds.r);
                 }
                 if (strcmp(key, "green") == 0)
                 {
-                    leds.g = json_object_get_int(val);
+                    leds.g = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color green: %d\n", leds.g);
                 }
                 if (strcmp(key, "blue") == 0)
                 {
-                    leds.b = json_object_get_int(val);
+                    leds.b = (uint8_t)json_object_get_int(val);
                     _syslog(LOG_INFO, "color blue: %d\n", leds.b);
                 }
             }
+            json_object_put(jobj);
         }
         _syslog(LOG_INFO, "vals: %d %d %d %d %d\n", leds.state, leds.brightness, leds.r, leds.g, leds.b);
         set_leds(leds);
@@ -173,7 +185,7 @@ void init_leds()
     curstateleds.brightness = 255;
     curstateleds.state = 0;
 
-    curstateleds.speed = config.led_speed;
+    curstateleds.duration = config.led_duration;
     curstateleds.effect = config.led_effect;
 }
 void init_fleds()
@@ -197,44 +209,16 @@ void init_fleds()
         return;
     }
 }
-/*
-struct led_effect_data {
-	unsigned int start;
-	unsigned int period;
-    unsigned int stepr;
-    unsigned int stepb;
-    unsigned int stepg;
-    struct leds_rgb leds;
-	struct timer_list timer;
-};
-
-
-static void led_effect_function(struct timer_list *t)
+void led_sigc() 
 {
-	struct led_effect_data *effect_data = from_timer(effect_data, t, timer);
-	unsigned long delay = 0;
-    
-    if(effect_data->start==0) {
-        effect_data->start=jiffies;
-        effect_data->stepr=255/period*80;
-    }
-
-   	effect_data->period = msecs_to_jiffies(effect_data->period);
-	delay = msecs_to_jiffies(70);
-  	delay = effect_data->period / 4 - msecs_to_jiffies(70);
-
-    fprintf(ledrfile, "%d", (brightness));
-    fflush(ledrfile);
-
-    fprintf(ledgfile, "%d", (brightness));
-    fflush(ledgfile);
-
-    fprintf(ledbfile, "%d", (brightness));
-    fflush(ledbfile);
-
-	mod_timer(&effect_data->timer, jiffies + delay);
+	if (ledrfile != NULL)
+	    fclose(ledrfile);
+	if (ledgfile != NULL)
+	    fclose(ledgfile);
+	if (ledbfile != NULL)
+	    fclose(ledbfile);
 }
-*/
+
 void set_leds(struct leds_rgb leds)
 {
     if (leds.brightness == 0)
@@ -242,41 +226,102 @@ void set_leds(struct leds_rgb leds)
         leds.brightness = 255;
         leds.state = 0;
     }
-/*    if(leds.effect!=0 && leds.speed!=0) {
-
-        struct led_effect_data *effect_data;
-
-    	effect_data = kzalloc(sizeof(*effect_data), GFP_KERNEL);
-
-    	timer_setup(&effect_data->timer, led_effect_function, 0);
-
-    	effect_data->period = leds.speed;
-
-    	led_effect_function(&effect_data->timer);
-
-    }else{
-*/    if (ledrfile == NULL)
+    if (ledrfile == NULL){
         init_fleds();
+    }
+	if(leds.effect==1 && leds.duration!=0) {
+		int ticks=255*leds.duration;
+		int i=ticks;
+		int cr, fr;
+		int cg, fg;
+		int cb, fb;
+		cr=(curstateleds.r * curstateleds.brightness * curstateleds.state);
+		fr=(leds.r * leds.brightness * leds.state);
+		cg=(curstateleds.g * curstateleds.brightness * curstateleds.state);
+		fg=(leds.g * leds.brightness * leds.state);
+		cb=(curstateleds.b * curstateleds.brightness * curstateleds.state);
+		fb=(leds.b * leds.brightness * leds.state);
+		while(i>0) {
+			usleep(4000);
+			applyRGB(
+				(uint8_t)((fr * (ticks - i) + (cr * i)) / ticks / 255), 
+                (uint8_t)((fg * (ticks - i) + (cg * i)) / ticks / 255),
+                (uint8_t)((fb * (ticks - i) + (cb * i)) / ticks / 255)
+			);
+			i--;
+		}
+	}
+	if(leds.effect==2 && leds.duration!=0) {
+		int ticks=255*leds.duration;
+		int i=ticks;
+		int cr, fr;
+		int cg, fg;
+		int cb, fb;
+		cr=(curstateleds.r * curstateleds.brightness * curstateleds.state);
+		fr=(leds.r * leds.brightness * leds.state);
+		cg=(curstateleds.g * curstateleds.brightness * curstateleds.state);
+		fg=(leds.g * leds.brightness * leds.state);
+		cb=(curstateleds.b * curstateleds.brightness * curstateleds.state);
+		fb=(leds.b * leds.brightness * leds.state);
+		while(i>0) {
+			usleep(4000);
+			applyRGB(
+				(uint8_t)(((fr/2 + rand()%120) * (ticks - i) + (cr * i)) / ticks / 255), 
+                (uint8_t)((fg * (ticks - i) + (cg * i)) / ticks / 255),
+                (uint8_t)((fb * (ticks - i) + (cb * i)) / ticks / 255)
+			);
+			i--;
+		}
+	}
 
-    fprintf(ledrfile, "%d", (leds.r * leds.brightness * leds.state / 255));
-    fflush(ledrfile);
 
-    fprintf(ledgfile, "%d", (leds.g * leds.brightness * leds.state / 255));
-    fflush(ledgfile);
+	if(leds.effect==3 && leds.duration!=0) {
+		int i, k, r,g,b;
+		for(k = 255*leds.duration; k >= 0 ; k--){
+			i=k%255;
+            r = 0;
+            g = 0;
+            b = 0;
+    		if(i < 85)
+		    {
+                r = 255 - i * 3;
+                b = i * 3;
+		    }
+		    else if(i < 170)
+		    {
+        		i -= 85;
+                g = i * 3;
+                b = 255 - i * 3;
+		    }
+		    else
+		    {
+        		i -= 170;
+                r = i * 3;
+                g = 255 - i * 3;
+		    }
+            applyRGB((uint8_t)r, (uint8_t)g, (uint8_t)b);
+		    usleep(4000);
+		}
+	}
+   	applyRGB((uint8_t)(leds.r * leds.brightness * leds.state / 255), (uint8_t)(leds.g * leds.brightness * leds.state / 255), (uint8_t)(leds.b * leds.brightness * leds.state / 255));
+    leds.status = 1;
 
-    fprintf(ledbfile, "%d", (leds.b * leds.brightness * leds.state / 255));
-    fflush(ledbfile);
-    //}
-    if (leds.state == 0 && leds.r==0 && leds.g==0 && leds.b==0)
-    {
+    if (leds.state == 0 && leds.r==0 && leds.g==0 && leds.b==0) {
         leds.r = curstateleds.r;
         leds.g = curstateleds.g;
         leds.b = curstateleds.b;
     }
-    //if(leds.r != curstateleds.r || leds.g != curstateleds.g || leds.b != curstateleds.b || leds.brightness != curstateleds.brightness || leds.state != curstateleds.state )
-        leds.status = 1;
     memcpy(&curstateleds, &leds, sizeof(leds));
-    //curstateleds = leds;
+}
+void applyRGB(uint8_t r, uint8_t g, uint8_t b) {
+		fprintf(ledrfile, "%d", r);
+	    fflush(ledrfile);
+
+    	fprintf(ledgfile, "%d", g);
+	    fflush(ledgfile);
+
+    	fprintf(ledbfile, "%d", b);
+	    fflush(ledbfile);
 }
 struct leds_rgb get_leds()
 {
@@ -284,6 +329,11 @@ struct leds_rgb get_leds()
     uint8_t tmp;
     leds.state = curstateleds.state;
     leds.brightness = curstateleds.brightness;
+    leds.duration = curstateleds.duration;
+    leds.effect = curstateleds.effect;
+    
+    if (leds.status > 1) return leds;
+
     if (leds.brightness == 0)
     {
         leds.brightness = 255;
@@ -302,15 +352,16 @@ struct leds_rgb get_leds()
 
     rewind(ledrfile);
     fscanf(ledrfile, "%hhu", &tmp);
-    leds.r = tmp * 255 / leds.brightness;
+    leds.r = (uint8_t)(tmp * 255 / leds.brightness);
 
     rewind(ledgfile);
     fscanf(ledgfile, "%hhu", &tmp);
-    leds.g = tmp * 255 / leds.brightness;
+    leds.g = (uint8_t)(tmp * 255 / leds.brightness);
 
     rewind(ledbfile);
     fscanf(ledbfile, "%hhu", &tmp);
-    leds.b = tmp * 255 / leds.brightness;
+    leds.b = (uint8_t)(tmp * 255 / leds.brightness);
+
     if (leds.b != 0 || leds.g != 0 || leds.r != 0)
         leds.state = 1;
     return leds;
@@ -328,7 +379,7 @@ void leds_periodical_check(void)
         curstateleds.state != newleds.state ||
         curstateleds.brightness != newleds.brightness)
     {
-        topic = malloc(strlen(config.topic) + 5);
+        topic = malloc(strlen(config.topic) + 6);
         sprintf(topic, "%s%s", config.topic, "light");
 
         message = malloc(100);
@@ -361,14 +412,14 @@ void leds_periodical_check(void)
             else
             if (newleds.effect == 1)
             {
-                str = json_object_new_string("transition");
+                str = json_object_new_string("fade");
             }
             else
             {
                 str = json_object_new_string("none");
             }
             json_object_object_add(root, "effect", str);
-            json_object_object_add(root, "speed", json_object_new_int(newleds.speed));
+            json_object_object_add(root, "duration", json_object_new_int(newleds.duration));
             sprintf(message, "%s", json_object_to_json_string_ext(root, NULL));
             json_object_put(root);
         }
@@ -378,7 +429,6 @@ void leds_periodical_check(void)
             _syslog(LOG_INFO, "Published %s r %d g %d b %d s %d b %d c %d", topic, newleds.r, newleds.g, newleds.b, newleds.state, newleds.brightness, newleds.status);
             if (newleds.state != 0){
                 memcpy(&curstateleds, &newleds, sizeof(newleds));
-                //curstateleds = newleds;
             }else
             {
                 curstateleds.brightness = newleds.brightness;
@@ -390,58 +440,15 @@ void leds_periodical_check(void)
         free(message);
     }
 }
-
-void leds_auto_discover(void)
-{
-    char *topic, *message;
-    json_object *effect_list, *identifiers, *device, *root;
-
-    topic = malloc(strlen(config.device_id) + 100);
-    message = malloc(1000);
-
-    device = json_object_new_object();
-    sprintf(message, "xiaomi_gateway_%s", config.device_id);
-    identifiers = json_object_new_array();
-    json_object_array_add(identifiers, json_object_new_string(message));
-    json_object_object_add(device, "identifiers", identifiers);
-    json_object_object_add(device, "name", json_object_new_string(message));
-    json_object_object_add(device, "sw_version", json_object_new_string("0.0.1"));
-    json_object_object_add(device, "model", json_object_new_string("Xiaomi Gateway"));
-    json_object_object_add(device, "manufacturer", json_object_new_string("Xiaomi"));
-
-    root = json_object_new_object();
-    if (root)
-    {
-        sprintf(message, "%s_light", config.device_id);
-        json_object_object_add(root, "name", json_object_new_string(message));
-        json_object_object_add(root, "unique_id", json_object_new_string(message));
-        //json_object_object_add(root, "schema", json_object_new_string("json"));
-        json_object_object_add(root, "device", json_object_get(device));
-        sprintf(message, "%s%s", config.topic, "status");
-        json_object_object_add(root, "availability_topic", json_object_new_string(message));
-        sprintf(message, "%s%s", config.topic, "light");
-        json_object_object_add(root, "state_topic", json_object_new_string(message));
-        sprintf(message, "%s%s", config.topic, "light/set");
-        json_object_object_add(root, "command_topic", json_object_new_string(message));
-        json_object_object_add(root, "brightness", json_object_new_boolean(1));
-        json_object_object_add(root, "rgb", json_object_new_boolean(1));
-        json_object_object_add(root, "effect", json_object_new_boolean(1));
-        effect_list = json_object_new_array();
-        json_object_array_add(effect_list, json_object_new_string("off"));
-        json_object_array_add(effect_list, json_object_new_string("transition"));
-        json_object_array_add(effect_list, json_object_new_string("pattern"));
-        json_object_object_add(root, "effect_list", effect_list);
-        sprintf(message, "%s", json_object_to_json_string_ext(root, 0));
-        //json_object_object_del(root, "device");
-        //device=json_object_object_get(root, "device");
-        //json_object_put(root);
+void leds_auto_discover(void) {
+        char *topic, *message;
+        message = malloc(1000);
+        topic = malloc(1000);
+        sprintf(topic, "\"device\" : {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\" : \"xiaomi_gateway_%s\", \"sw_version\" : \"%s\", \"model\" : \"Xiaomi Gateway\", \"manufacturer\" : \"Xiaomi\"},\"availability_topic\": \"%sstatus\",", config.device_id, config.device_id, VERSION, config.topic);
+        sprintf(message, "{\"name\": \"%s_light\", \"unique_id\" : \"%s_light\", \"schema\" : \"json\", %s \"state_topic\" : \"%slight\",\"command_topic\" : \"%slight/set\",\"effect_list\" : [\"none\",\"fade\",\"pattern\",\"wheel\"],\"rgb\" : true,\"brightness\" : true,\"effect\" : true}", config.device_id, config.device_id, topic, config.topic, config.topic);
         sprintf(topic, "homeassistant/light/%s/light/config", config.device_id);
         if (!mqtt_publish(topic, message))
             _syslog(LOG_ERR, "Error: mosquitto_publish failed\n");
-    }
-    json_object_put(device);
-    json_object_put(effect_list);
-    json_object_put(identifiers);
-    free(topic);
-    free(message);
+        free(topic);
+        free(message);
 }

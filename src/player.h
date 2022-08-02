@@ -48,8 +48,9 @@ static int pfd[2];
 static int stopplay = 0;
 static playArgs_t playargs;
 
-static void sockpipe_thread(int tfd);
-static int return_sock(char *url);
+void sockpipe_thread(int tfd);
+void sockpipessl_thread(int tfd);
+int return_sock(char *url);
 int play_on_message(char *id, char *payload, int len);
 void call_play(char *playfile, int len, int channel);
 void stop_play();

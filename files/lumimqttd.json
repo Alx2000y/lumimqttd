@@ -16,7 +16,17 @@
 "green_led": "/sys/class/leds/green/brightness",
 "blue_led": "/sys/class/leds/blue/brightness",
 "lux_file": "/sys/bus/iio/devices/iio:device0/in_voltage5_raw",
-"cache_tts_path": "", // if empty - no cache
-"ya_tts_api_key": "",
-"ya_tts_folder_id": ""
+//"led_effect": "fade",
+//"led_duration": 2,
+//"cache_tts_path": "", // if empty - no cache
+//"cache_tts_all": true,
+//"cache_tts_make_index": true,
+//"ya_tts_api_key": "",
+//"ya_tts_folder_id": "",
+//"disable": ["bt","ble","illuminance", "cputemp"], // disable monitoring some parts
+//"btscan_interval": 60,
+//"btscan_duration": 50,
+//"ble_list": ["DD-DD-DD-DD-C1-56","DD-DD-DD-69-7C-7A","DD-DD-DD-8C-9E-A1"], // list of ble devices for check presence
+//"ble_timeout":180 // timeout after which the absence is announced
+
 }

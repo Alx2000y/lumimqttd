@@ -10,7 +10,7 @@
 
 cfg_t config;
 
-char *getmac(const char *def)
+char *getmac()
 {
 	char *buf = malloc(13);
 	struct ifreq s;
@@ -23,19 +23,25 @@ char *getmac(const char *def)
 				s.ifr_addr.sa_data[3], s.ifr_addr.sa_data[4], s.ifr_addr.sa_data[5]);
 		return buf;
 	}
-	return strdup(def);
+	return "001";
 }
 
 int cfg_load(char *file)
 {
+
+	FILE *f = fopen(file, "rb");
+	fseek(f, 0, SEEK_END);
+	size_t fsize = (size_t)ftell(f);
+	fseek(f, 0, SEEK_SET);
 	memset(&config, 0, sizeof(config));
+
 	config.mqtt_port = 1883;
 	config.mqtt_host = strdup("127.0.0.1");
 	config.mqtt_user = strdup("");
 	config.mqtt_user_pw = strdup("");
 	config.mqtt_keepalive = 60;
 	config.mqtt_retain = 0;
-	config.device_id = getmac("001");
+	config.device_id = strdup(getmac());
 	config.topic = strdup("lumi/{device_id}/");
 	config.red_led = strdup("/sys/class/leds/red/brightness");
 	config.green_led = strdup("/sys/class/leds/green/brightness");
@@ -43,20 +49,23 @@ int cfg_load(char *file)
 	config.lux_file = strdup("/sys/bus/iio/devices/iio:device0/in_voltage5_raw");
 	config.cputemp_file = strdup("/sys/devices/virtual/thermal/thermal_zone0/temp");
     config.led_effect=1;
-    config.led_speed=1;
+    config.led_duration=1;
 	config.ya_tts_api_key = strdup("");
 	config.ya_tts_folder_id = strdup("");
     config.cache_tts_path = strdup("");
+    config.cache_all = 0;
+    config.cache_make_index = 0;
 	config.readinterval = 1;
 	config.treshold = 10;
 	config.verbosity = 2;
 	config.auto_discovery = 1;
-
-	FILE *f = fopen(file, "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	/* same as rewind(f); */
+	config.disable_bt=0;
+	config.disable_ble=0;
+	config.disable_illuminance=0;
+	config.disable_cputemp=0;
+	config.disable_btn=0;
+	config.btscan_interval = 60;
+	config.btscan_duration = 50;
 
 	char *string = malloc(fsize + 1);
 	fread(string, 1, fsize, f);
@@ -65,7 +74,6 @@ int cfg_load(char *file)
 	enum json_type type;
 	enum json_tokener_error jerr;
 	json_object *jobj = json_tokener_parse_verbose((char *)string, &jerr);
-	//printf("%s\n",string);
 	if (jerr != json_tokener_success)
 	{
 		printf("%s\n", json_tokener_error_desc(jerr));
@@ -114,13 +122,18 @@ int cfg_load(char *file)
 		{
 			config.blue_led = strdup(json_object_get_string(val));
 		}
-    	if (strcmp(key, "led_effect") == 0 && type == json_type_string && strcmp(json_object_get_string(val), "transition") == 0)
+    	if (strcmp(key, "led_effect") == 0 && type == json_type_string)
 		{
-			config.led_effect = 1;
+			if(strcmp(json_object_get_string(val), "fade") == 0)
+				config.led_effect = 1;
+			if(strcmp(json_object_get_string(val), "pattern") == 0)
+				config.led_effect = 2;
+			if(strcmp(json_object_get_string(val), "wheel") == 0)
+				config.led_effect = 3;
 		}
-    	if (strcmp(key, "led_speed") == 0 && type == json_type_int)
+    	if (strcmp(key, "led_duration") == 0 && type == json_type_int)
 		{
-			config.led_speed = json_object_get_int(val);
+			config.led_duration = (uint8_t)json_object_get_int(val);
 		}
 
 		if (strcmp(key, "lux_file") == 0 && type == json_type_string)
@@ -139,44 +152,103 @@ int cfg_load(char *file)
 		{
 			config.cache_tts_path = strdup(json_object_get_string(val));
 		}
+		if (strcmp(key, "cache_tts_all") == 0 && type == json_type_boolean)
+		{
+			config.cache_all = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
+		}
+		if (strcmp(key, "cache_tts_make_index") == 0 && type == json_type_boolean)
+		{
+			config.cache_make_index = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
+		}
 		if (strcmp(key, "ya_tts_folder_id") == 0 && type == json_type_string)
 		{
 			config.ya_tts_folder_id = strdup(json_object_get_string(val));
 		}
 		if (strcmp(key, "mqtt_port") == 0 && type == json_type_int)
 		{
-			config.mqtt_port = json_object_get_int(val);
+			config.mqtt_port = (uint16_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "mqtt_keepalive") == 0 && type == json_type_int)
 		{
-			config.mqtt_keepalive = json_object_get_int(val);
+			config.mqtt_keepalive = (uint8_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "readinterval") == 0 && type == json_type_int)
 		{
-			config.readinterval = json_object_get_int(val);
+			config.readinterval = (uint8_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "treshold") == 0 && type == json_type_int)
 		{
-			config.treshold = json_object_get_int(val);
+			config.treshold = (uint8_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "mqtt_retain") == 0 && type == json_type_boolean)
 		{
-			config.mqtt_retain = (uint16_t)json_object_get_boolean(val) ? 1 : 0;
+			config.mqtt_retain = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
 		}
 		if (strcmp(key, "auto_discovery") == 0 && type == json_type_boolean)
 		{
-			config.auto_discovery = (uint16_t)json_object_get_boolean(val) ? 1 : 0;
+			config.auto_discovery = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
 		}
 		if (strcmp(key, "log_level") == 0 && type == json_type_int)
 		{
-			config.verbosity = json_object_get_int(val);
+			config.verbosity = (uint8_t)json_object_get_int(val);
 		}
+		if (strcmp(key, "btscan_interval") == 0 && type == json_type_int)
+		{
+			config.btscan_interval = (uint8_t)json_object_get_int(val);
+		}
+		if (strcmp(key, "btscan_duration") == 0 && type == json_type_int)
+		{
+			config.btscan_duration = (uint8_t)json_object_get_int(val);
+		}
+		
+		if (strcmp(key, "disable") == 0 && type == json_type_array)
+		{
+			array_list * components = json_object_get_array(val);
+			size_t len = array_list_length(components);
+			for (size_t j = 0; j < len; ++j) {
+				json_object * elem = json_object_array_get_idx(val, j);
+				if(strcmp(json_object_get_string(elem), "bt") == 0) {
+					config.disable_bt=1;
+				}
+				if(strcmp(json_object_get_string(elem), "ble") == 0) {
+					config.disable_ble=1;
+				}
+				if(strcmp(json_object_get_string(elem), "illuminance") == 0) {
+					config.disable_illuminance=1;
+				}
+				if(strcmp(json_object_get_string(elem), "cputemp") == 0) {
+					config.disable_cputemp=1;
+				}
+				if(strcmp(json_object_get_string(elem), "btn") == 0) {
+					config.disable_btn=1;
+				}
+			}
+		}
+#ifdef USE_BLE
+		if (strcmp(key, "ble_list") == 0 && type == json_type_array)
+		{
+			array_list * ble_arr = json_object_get_array(val);
+			int ble_len = array_list_length(ble_arr);
+			init_maclist(ble_len);
+			printf("ble list length:  %d\n", ble_len);
+			for (int j = 0; j < ble_len; ++j) {
+				json_object * elem = json_object_array_get_idx(val, j);
+				char* mac = strdup(json_object_get_string(elem));
+				add_mac(mac, j);
+			}
+		}
+		if (strcmp(key, "ble_timeout") == 0 && type == json_type_int)
+		{
+			set_ble_timeout(json_object_get_int(val));
+		}
+		
+#endif
 	}
     if(strstr(config.topic, "{device_id}") != NULL) {
-        char* tmp=malloc(strlen(config.topic)+strlen(config.device_id));
+        char* tmp=malloc(strlen(config.topic)+strlen(config.device_id) + 1);
 
-        int len=strstr(config.topic, "{device_id}")-config.topic;
-        strncpy(string, config.topic, len);
+        long int len = strstr(config.topic, "{device_id}")-config.topic;
+        strncpy(string, config.topic, (size_t)len);
         string[len]=0;
         sprintf(tmp, "%s%s%s", string, config.device_id, config.topic + len + 11);
         config.topic=strdup(tmp);

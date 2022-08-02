@@ -14,24 +14,37 @@
 /*Local*/
 #include "log.h"
 
+#ifndef VERSION
+#define VERSION "TestVer"
+#endif
+
 typedef struct cfg_t
 {
-    char *mqtt_host;
     uint16_t mqtt_port;
-    uint16_t mqtt_keepalive;
+    uint8_t mqtt_keepalive;
     uint8_t auto_discovery;
-    char *mqtt_user;
-    char *mqtt_user_pw;
+    uint8_t disable_ble;
+    uint8_t disable_bt;
+    uint8_t disable_cputemp;
+    uint8_t disable_illuminance;
+    uint8_t disable_btn;
+    uint8_t btscan_duration;
+    uint8_t btscan_interval;
+    uint8_t cache_all;
+    uint8_t cache_make_index;
     uint8_t *listen_address;
     uint8_t mqtt_retain;
-    uint16_t readinterval;
-    uint16_t treshold;
-    uint16_t verbosity;
+    uint8_t readinterval;
+    uint8_t treshold;
+    uint8_t verbosity;
+    uint8_t led_effect;
+    uint8_t led_duration;
+    char *mqtt_host;
+    char *mqtt_user;
+    char *mqtt_user_pw;
     char *red_led;
     char *green_led;
     char *blue_led;
-    uint8_t led_effect;
-    uint8_t led_speed;
     char *lux_file;
     char *cputemp_file;
     char *ya_tts_api_key;
@@ -43,7 +56,7 @@ typedef struct cfg_t
 
 extern cfg_t config;
 
-char *getmac(const char *def);
+char *getmac();
 extern int cfg_load(char *file);
 extern void cfg_dump(void);
 
