@@ -62,9 +62,7 @@ are user by Home Assistant to discover entities.
 
 `readinterval` value in seconds to send changed data
 
-Для использования yandex голосов для ттс требуется указать `ya_tts_api_key` и
-`ya_tts_folder_id` из консоли Yandex облака.
-
+To use yandex voices for TTS, you need to specify `ya_tts_api_key` and `ya_tts_folder_id` from the Yandex cloud console.
 
 `led_effect` one of `none` `fade` `wheel` `transition`
 `led_duration` number of seconds
