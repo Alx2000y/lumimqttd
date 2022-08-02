@@ -16,6 +16,9 @@ int leds_on_message(char *id, char *payload, int len)
         if (strcmp(payload, "OFF") == 0){
         	leds.state = 0;
         } else
+        if (strcmp(payload, "TOGGLE") == 0){
+        	leds.state = !leds.state;
+        } else
         if (strlen(payload) == 7)
         {
             temp = strdup(payload);
