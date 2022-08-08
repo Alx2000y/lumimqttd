@@ -5,28 +5,28 @@
 ### Default devices
 
 |      Action      |         Topic         |                Payload                |                                                          Expected values          |
-|:----------------:|:---------------------:|:-------------------------------------:|:---------------------------------------------------------------------------------:|
-| Read light state | lumi/&lt;ID&gt;/light       |                                       | {"state": "ON", "brightness": 255, "color": {"r": 255, "g": 0, "b": 0},"effect": "fade", "duration":1}     |
-| Switch light     | lumi/&lt;ID&gt;/light/set   | `ON` `OFF` `TOGGLE` or {"state": "ON"}                       |                                                                             |
-| Set light color  | lumi/&lt;ID&gt;/light/set   | {"color": {"r": 255, "g": 0, "b": 0}} |                                                                             |
-| Set light brightness   | lumi/&lt;ID&gt;/light/set   | {"brightness": 255}                   |                                                                             |
-| Set light effect   | lumi/&lt;ID&gt;/light/set   | {"effect": "fade", "duration": 2}                   ||
-| Set light   | lumi/&lt;ID&gt;/light/set   | {"state": "ON", "brightness": 255, "color": {"r": 255, "g": 0, "b": 0},"effect": "fade", "duration":1}                   ||
-| Read illuminance | lumi/&lt;ID&gt;/illuminance |                                       | 0-1000 lux                                                                     |
-| Read cpu temperature | lumi/&lt;ID&gt;/cputemp |                                       | &lt;float&gt; °C |
-| Button           | lumi/&lt;ID&gt;/btn | | current position 0 or 1 |
-| Volume           | lumi/&lt;ID&gt;/volume | | current volume 0-100 |
-| Set volume           | lumi/&lt;ID&gt;/volume/set | 0-100 | |
-| Volume Alert channel           | lumi/&lt;ID&gt;/volumealert | | current volume 0-100 |
-| Set volume Alert channel           | lumi/&lt;ID&gt;/volumealert/set | 0-100 | |
-| Play music file  | lumi/&lt;ID&gt;/sound/set | local path to mp3 file or mp3 url | |
-| TTS say text  | lumi/&lt;ID&gt;/tts/set or lumi/&lt;ID&gt;/tts/say | text or json {"text":"What to say", "cache": 0} or for Yandex.tts {"text":"What to say", "cache": 1, "updatecache": 1, "voice":"alice", "speed": 10, "emotion": "evil"}||
-| TTS yandex set voice  | lumi/&lt;ID&gt;/tts/voice/set | one from list of yandex voices | Default alyss or google |
-| TTS yandex set emotion  | lumi/&lt;ID&gt;/tts/emotion/set | one from list of emotions | Default neutral |
-| TTS yandex set speed  | lumi/&lt;ID&gt;/tts/speed/set | 1-30 | Default 10 |
-| BT scan  | lumi/&lt;ID&gt;/bt | | List of bt devices |
-| BLE scan  | lumi/&lt;ID&gt;/ble/&lt;BleMAC&gt; | | List of ble devices |
-| BLE presence (only for "ble_list" from config) | lumi/&lt;ID&gt;/ble/&lt;BleMAC&gt; | | {'state': 0} or {'state': 1} |
+|:----------------|:---------------------|:-------------------------------------|:---------------------------------------------------------------------------------|
+| Read light state | lumi/&lt;device_id&gt;/light       |                                       | {"state": "ON", "brightness": 255, "color": {"r": 255, "g": 0, "b": 0},"effect": "fade", "duration":1}     |
+| Switch light     | lumi/&lt;device_id&gt;/light/set   | `ON` `OFF` `TOGGLE` or {"state": "ON"}                       |                                                                             |
+| Set light color  | lumi/&lt;device_id&gt;/light/set   | {"color": {"r": 255, "g": 0, "b": 0}} |                                                                             |
+| Set light brightness   | lumi/&lt;device_id&gt;/light/set   | {"brightness": 255}                   |                                                                             |
+| Set light effect   | lumi/&lt;device_id&gt;/light/set   | {"effect": "fade", "duration": 2}                   ||
+| Set light   | lumi/&lt;device_id&gt;/light/set   | {"state": "ON", "brightness": 255, "color": {"r": 255, "g": 0, "b": 0},"effect": "fade", "duration":1}                   ||
+| Read illuminance | lumi/&lt;device_id&gt;/illuminance |                                       | 0-1000 lux                                                                     |
+| Read cpu temperature | lumi/&lt;device_id&gt;/cputemp |                                       | &lt;float&gt; °C |
+| Button           | lumi/&lt;device_id&gt;/btn | | current position 0 or 1 |
+| Volume           | lumi/&lt;device_id&gt;/volume | | current volume 0-100 |
+| Set volume           | lumi/&lt;device_id&gt;/volume/set | 0-100 | |
+| Volume Alert channel           | lumi/&lt;device_id&gt;/volumealert | | current volume 0-100 |
+| Set volume Alert channel           | lumi/&lt;device_id&gt;/volumealert/set | 0-100 | |
+| Play music file  | lumi/&lt;device_id&gt;/sound/set | local path to mp3 file or mp3 url | |
+| TTS say text  | lumi/&lt;device_id&gt;/tts/set or lumi/&lt;device_id&gt;/tts/say | text or json {"text":"What to say", "cache": 0} or for Yandex.tts {"text":"What to say", "cache": 1, "updatecache": 1, "voice":"alice", "speed": 10, "emotion": "evil"}||
+| TTS yandex set voice  | lumi/&lt;device_id&gt;/tts/voice/set | one from list of yandex voices | Default alyss or google |
+| TTS yandex set emotion  | lumi/&lt;device_id&gt;/tts/emotion/set | one from list of emotions | Default neutral |
+| TTS yandex set speed  | lumi/&lt;device_id&gt;/tts/speed/set | 1-30 | Default 10 |
+| BT scan  | lumi/&lt;device_id&gt;/bt | | List of bt devices |
+| BLE scan  | lumi/&lt;device_id&gt;/ble/&lt;BleMAC&gt; | | List of ble devices |
+| BLE presence (only for "ble_list" from config) | lumi/&lt;device_id&gt;/ble/&lt;BleMAC&gt; | | {'state': 0} or {'state': 1} |
 
 
 The configuration file is a JSON with the following content:
@@ -39,7 +39,7 @@ The configuration file is a JSON with the following content:
     "mqtt_password": "",
     "mqtt_retain": true,
     "topic_root": "lumi/{device_id}",
-    "device_id":"001"
+    //"device_id":"001"
     "auto_discovery": true,
     "connect_retries": 10,
     "log_level": 3,
