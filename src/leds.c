@@ -448,7 +448,7 @@ void leds_auto_discover(void) {
         message = malloc(1000);
         topic = malloc(1000);
         sprintf(topic, "\"device\" : {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\" : \"xiaomi_gateway_%s\", \"sw_version\" : \"%s\", \"model\" : \"Xiaomi Gateway\", \"manufacturer\" : \"Xiaomi\"},\"availability_topic\": \"%sstatus\",", config.device_id, config.device_id, VERSION, config.topic);
-        sprintf(message, "{\"name\": \"%s_light\", \"unique_id\" : \"%s_light\", \"schema\" : \"json\", %s \"state_topic\" : \"%slight\",\"command_topic\" : \"%slight/set\",\"effect_list\" : [\"none\",\"fade\",\"pattern\",\"wheel\"],\"rgb\" : true,\"brightness\" : true,\"effect\" : true}", config.device_id, config.device_id, topic, config.topic, config.topic);
+        sprintf(message, "{\"name\": \"RGB Led %s\", \"unique_id\" : \"%s_light\", \"schema\" : \"json\", %s \"state_topic\" : \"%slight\",\"command_topic\" : \"%slight/set\",\"effect_list\" : [\"none\",\"fade\",\"pattern\",\"wheel\"],\"rgb\" : true,\"brightness\" : true,\"effect\" : true}", config.device_id, config.device_id, topic, config.topic, config.topic);
         sprintf(topic, "homeassistant/light/%s/light/config", config.device_id);
         if (!mqtt_publish(topic, message))
             _syslog(LOG_ERR, "Error: mosquitto_publish failed\n");

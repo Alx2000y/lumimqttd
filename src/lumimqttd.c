@@ -239,16 +239,15 @@ void *button_check(void *args)
             free(topic);
 			return;
 		}
-
-		_syslog(LOG_INFO, "Event: time %ld.%06ld, ", ev.time.tv_sec, ev.time.tv_usec);
+		_syslog(LOG_INFO, "Event: time %ld.%06ld, ", ev.input_event_sec, ev.input_event_usec);
 		_syslog(LOG_INFO, "type: %i, code: %i, value: %i\n", ev.type, ev.code, ev.value);
         if(ev.type==1) {
             hsleep=1;
             if(ev.value==1) {
-                start=(ev.time.tv_sec)*1000 + (ev.time.tv_usec)/1000;
+                start=(ev.input_event_sec)*1000 + (ev.input_event_usec)/1000;
                 if(interval>50 && interval<300) clickn++;
             }else{
-                interval=(ev.time.tv_sec)*1000 + (ev.time.tv_usec)/1000 - start;
+                interval=(ev.input_event_sec)*1000 + (ev.input_event_usec)/1000 - start;
             }
             message = malloc(13);
             sprintf(message, "%d", ev.value);
@@ -279,18 +278,29 @@ void auto_discover(void)
     _syslog(LOG_INFO, "Autodiscover started\n");
     leds_auto_discover();
     _syslog(LOG_INFO, "Leds discovered\n");
+    volume_auto_discover();
+    _syslog(LOG_INFO, "Volume discovered\n");
     if(config.disable_illuminance==1 && config.disable_cputemp==1) {
     	return;
     }
     char *topic, *message;
     topic = malloc(1000);
     message = malloc(1000);
-
-    sprintf(topic, "\"device\": {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\": \"xiaomi_gateway_%s\", \"sw_version\": \"%s\", \"model\": \"Xiaomi Gateway\", \"manufacturer\": \"Xiaomi\"},\"availability_topic\": \"%sstatus\",",
+    { //BTN
+	    sprintf(topic, "\"device\": {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\": \"xiaomi_gateway_%s\", \"sw_version\": \"%s\", \"model\": \"Xiaomi Gateway\", \"manufacturer\": \"Xiaomi\"},\"availability_topic\": \"%sstatus\",",
         config.device_id, config.device_id, VERSION, config.topic);
 
+        sprintf(message, "{\"name\": \"Button %s\", \"unique_id\": \"%s_btn\", %s \"state_topic\": \"%sbtn\", \"payload_on\": \"1\", \"payload_off\": \"0\"}",
+            config.device_id, config.device_id, topic, config.topic);
+        sprintf(topic, "homeassistant/binary_sensor/%s/btn/config", config.device_id);
+        if (!mqtt_publish(topic, message))
+            _syslog(LOG_ERR, "Error: mosquitto_publish failed\n");
+	}
 	if(config.disable_illuminance==0) {
-        sprintf(message, "{\"name\": \"%s_illuminance\", \"unique_id\": \"%s_illuminance\", \"schema\": \"json\", %s \"state_topic\": \"%silluminance\",\"device_class\": \"illuminance\",\"unit_of_measurement\": \"lx\"}",
+	    sprintf(topic, "\"device\": {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\": \"xiaomi_gateway_%s\", \"sw_version\": \"%s\", \"model\": \"Xiaomi Gateway\", \"manufacturer\": \"Xiaomi\"},\"availability_topic\": \"%sstatus\",",
+        config.device_id, config.device_id, VERSION, config.topic);
+
+        sprintf(message, "{\"name\": \"illuminance %s\", \"unique_id\": \"%s_illuminance\", \"schema\": \"json\", %s \"state_topic\": \"%silluminance\",\"device_class\": \"illuminance\",\"unit_of_measurement\": \"lx\"}",
             config.device_id, config.device_id, topic, config.topic);
         sprintf(topic, "homeassistant/sensor/%s/illuminance/config", config.device_id);
         if (!mqtt_publish(topic, message))
@@ -298,7 +308,10 @@ void auto_discover(void)
     }
 #ifdef USE_CPUTEMP
     if (config.disable_cputemp == 0) {
-        sprintf(message, "{\"name\": \"%s_cputemp\", \"unique_id\": \"%s_cputemp\", \"schema\": \"json\", %s \"state_topic\": \"%scputemp\",\"device_class\": \"temperature\",\"unit_of_measurement\": \"C\"}",
+	    sprintf(topic, "\"device\": {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\": \"xiaomi_gateway_%s\", \"sw_version\": \"%s\", \"model\": \"Xiaomi Gateway\", \"manufacturer\": \"Xiaomi\"},\"availability_topic\": \"%sstatus\",",
+        config.device_id, config.device_id, VERSION, config.topic);
+
+        sprintf(message, "{\"name\": \"Cpu Temperature %s\", \"unique_id\": \"%s_cputemp\", \"schema\": \"json\", %s \"state_topic\": \"%scputemp\",\"device_class\": \"temperature\",\"unit_of_measurement\": \"C\"}",
             config.device_id, config.device_id, topic, config.topic);
         sprintf(topic, "homeassistant/sensor/%s/cputemp/config", config.device_id);
         if (!mqtt_publish(topic, message))

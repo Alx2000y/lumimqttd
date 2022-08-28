@@ -6,7 +6,7 @@
 int play_on_message(char *id, char *payload, int len) 
 {
     char *temp = NULL;
-    if (strcmp(id, "sound/set") == 0 || strcmp(id, "play/set") == 0)
+    if (strcmp(id, "sound/set") == 0 || strcmp(id, "play/set") == 0 || strcmp(id, "play") == 0)
     {
         _syslog(LOG_INFO, "sound %s %s\n", id, payload);
         if (len > 0)

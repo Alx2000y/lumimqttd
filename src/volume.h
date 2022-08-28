@@ -54,5 +54,5 @@ extern void init_volume(void);
 extern void volume_periodical_check(void);
 void set_volume(int vol, const char *selem_name);
 int get_volume(const char *selem_name);
-
+void volume_auto_discover(void);
 #endif /* _VOL_H_ */

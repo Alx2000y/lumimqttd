@@ -150,3 +150,23 @@ void volume_periodical_check(void)
 #endif
 }
 
+void volume_auto_discover(void) {
+        char *topic, *message;
+        message = malloc(1000);
+        topic = malloc(1000);
+        sprintf(topic, "\"device\" : {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\" : \"xiaomi_gateway_%s\", \"sw_version\" : \"%s\", \"model\" : \"Xiaomi Gateway\", \"manufacturer\" : \"Xiaomi\"},\"availability_topic\": \"%sstatus\",", config.device_id, config.device_id, VERSION, config.topic);
+        sprintf(message, "{\"name\": \"Volume Master %s\", \"unique_id\" : \"%s_volume\", %s \"state_topic\" : \"%svolume\",\"command_topic\" : \"%svolume/set\", \"step\": 1, \"min\": 0, \"max\": 100, \"entity_category\": \"config\", \"icon\": \"mdi:volume-equal\", \"unit_of_measurement\": \"%%\"}", config.device_id, config.device_id, topic, config.topic, config.topic);
+
+        sprintf(topic, "homeassistant/number/%s/volume/config", config.device_id);
+        if (!mqtt_publish(topic, message))
+            _syslog(LOG_ERR, "Error: mosquitto_publish failed\n");
+
+        sprintf(topic, "\"device\" : {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\" : \"xiaomi_gateway_%s\", \"sw_version\" : \"%s\", \"model\" : \"Xiaomi Gateway\", \"manufacturer\" : \"Xiaomi\"},\"availability_topic\": \"%sstatus\",", config.device_id, config.device_id, VERSION, config.topic);
+        sprintf(message, "{\"name\": \"Volume Alert %s\", \"unique_id\" : \"%s_volumealert\", %s \"state_topic\" : \"%svolumealert\",\"command_topic\" : \"%svolumealert/set\", \"step\": 1, \"min\": 0, \"max\": 100, \"entity_category\": \"config\", \"icon\": \"mdi:volume-equal\", \"unit_of_measurement\": \"%%\"}", config.device_id, config.device_id, topic, config.topic, config.topic);
+
+        sprintf(topic, "homeassistant/number/%s/volumealert/config", config.device_id);
+        if (!mqtt_publish(topic, message))
+            _syslog(LOG_ERR, "Error: mosquitto_publish failed\n");
+        free(topic);
+        free(message);
+}
