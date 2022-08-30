@@ -55,7 +55,7 @@ typedef struct state_t
     uint8_t btn0;
     uint16_t lux;
 #ifdef USE_CPUTEMP
-    uint16_t cputemp;
+    uint32_t cputemp;
 #endif
 } state_t;
 

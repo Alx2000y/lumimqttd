@@ -127,7 +127,7 @@ void periodical_check(void)
     char *message;
     uint16_t lux = 0;
 #ifdef USE_CPUTEMP
-    uint16_t cputemp = 0;
+    uint32_t cputemp = 0;
 #endif
     static int period = 0;
 #ifdef USE_CPUTEMP
