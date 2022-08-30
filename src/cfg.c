@@ -57,6 +57,7 @@ int cfg_load(char *file)
     config.cache_make_index = 0;
 	config.readinterval = 1;
 	config.treshold = 10;
+	config.cputemp_treshold = 1200;
 	config.verbosity = 2;
 	config.auto_discovery = 1;
 	config.disable_bt=0;
@@ -179,6 +180,10 @@ int cfg_load(char *file)
 		if (strcmp(key, "treshold") == 0 && type == json_type_int)
 		{
 			config.treshold = (uint8_t)json_object_get_int(val);
+		}
+		if (strcmp(key, "cputemp_treshold") == 0 && type == json_type_int)
+		{
+			config.cputemp_treshold = (uint8_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "mqtt_retain") == 0 && type == json_type_boolean)
 		{

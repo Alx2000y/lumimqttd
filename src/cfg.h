@@ -36,6 +36,7 @@ typedef struct cfg_t
     uint8_t mqtt_retain;
     uint8_t readinterval;
     uint8_t treshold;
+    uint16_t cputemp_treshold;
     uint8_t verbosity;
     uint8_t led_effect;
     uint8_t led_duration;

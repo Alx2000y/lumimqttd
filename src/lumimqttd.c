@@ -148,7 +148,7 @@ void periodical_check(void)
             }
         }
 
-        if (curstate.cputemp > cputemp + 1200 || curstate.cputemp < cputemp - 1200)
+        if (curstate.cputemp > cputemp + config.cputemp_treshold || curstate.cputemp < cputemp - config.cputemp_treshold)
         {
             _syslog(LOG_INFO, "Last cputemp %d; new %d;\n", curstate.cputemp, cputemp);
             curstate.cputemp = cputemp;
