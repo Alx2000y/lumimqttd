@@ -2,27 +2,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NPM_NAME:=lumimqttd
 PKG_NAME:=$(PKG_NPM_NAME)
-PKG_VERSION:=0.2.7
+PKG_VERSION:=0.2.8
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Alexey Sadkov <alx.v.sadkov@gmail.com>
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
-
-define Package/lumimqttd-mpd
-  SECTION:=Lumi
-  CATEGORY:=Lumi
-  TITLE:=Lumimqtt mpd
-  DEFAULT:=y
-  DEPENDS+=+alsa-lib +libmosquitto +libjson-c +libpthread +libmpdclient +libwebsockets-openssl \
-  +LUMIMQTTD_BLE:bluez-libs
-  VARIANT:=mpd
-endef
-
-define Package/lumimqttd-mpd/description
- Lumimqtt mpd sound
-endef
 
 define Package/lumimqttd
   SECTION:=Lumi
@@ -60,16 +46,12 @@ endef
 
 TARGET_CPPFLAGS:= -I$(STAGING_DIR)/usr/include $(TARGET_CPPFLAGS) \
   $(if $(CONFIG_LUMIMQTTD_BLE),-DUSE_BLE,) \
+  $(if $(CONFIG_LUMIMQTTD_MPD),-DUSE_MPD,) \
   $(if $(CONFIG_LUMIMQTTD_CPUTEMP),-DUSE_CPUTEMP,)
-
-ifeq ($(BUILD_VARIANT),mpd)
-  TARGET_CPPFLAGS += -DUSE_MPD
-  MAKE_FLAGS += USE_MPD=1
-
-endif
 
 MAKE_FLAGS += \
   $(if $(CONFIG_LUMIMQTTD_BLE),USE_BLE=1,) \
+  $(if $(CONFIG_LUMIMQTTD_MPD),USE_MPD=1,) \
   $(if $(CONFIG_LUMIMQTTD_CPUTEMP),USE_CPUTEMP=1,) \
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS) -Wl,--gc-sections" 
@@ -88,5 +70,4 @@ define Package/lumimqttd/install
 endef
 Package/lumimqttd-mpd/install=$(Package/lumimqttd/install)
 
-$(eval $(call BuildPackage,lumimqttd-mpd))
 $(eval $(call BuildPackage,lumimqttd))

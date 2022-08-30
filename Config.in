@@ -13,4 +13,8 @@ config LUMIMQTTD_CPUTEMP
 	bool "Report cpu temperature"
 	default y
 
+config LUMIMQTTD_MPD
+	bool "Lumimqtt mpd sound"
+	default n
+
 endmenu
