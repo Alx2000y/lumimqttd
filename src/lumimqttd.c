@@ -135,7 +135,7 @@ void periodical_check(void)
         if (cputempfile != NULL)
         {
             rewind(cputempfile);
-            fscanf(cputempfile, "%hu", &cputemp);
+            fscanf(cputempfile, "%lu", &cputemp);
         }
         if (period == 0 && cputemp == 0)
         {
