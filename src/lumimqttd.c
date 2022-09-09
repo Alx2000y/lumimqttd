@@ -132,11 +132,6 @@ void periodical_check(void)
     static int period = 0;
 #ifdef USE_CPUTEMP
 	if(config.disable_cputemp==0) {
-        if (cputempfile != NULL)
-        {
-            rewind(cputempfile);
-            fscanf(cputempfile, "%lu", &cputemp);
-        }
         if (period == 0 && cputemp == 0)
         {
             if (cputempfile != NULL)
@@ -146,6 +141,11 @@ void periodical_check(void)
             {
                 _syslog(LOG_ERR, "could not read %s:%s", config.cputemp_file, strerror(errno));
             }
+        }
+        if (cputempfile != NULL)
+        {
+            rewind(cputempfile);
+            fscanf(cputempfile, "%lu", &cputemp);
         }
 
         if (curstate.cputemp > cputemp + config.cputemp_treshold || curstate.cputemp < cputemp - config.cputemp_treshold)

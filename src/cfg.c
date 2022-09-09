@@ -183,7 +183,7 @@ int cfg_load(char *file)
 		}
 		if (strcmp(key, "cputemp_treshold") == 0 && type == json_type_int)
 		{
-			config.cputemp_treshold = (uint8_t)json_object_get_int(val);
+			config.cputemp_treshold = (uint16_t)json_object_get_int(val);
 		}
 		if (strcmp(key, "mqtt_retain") == 0 && type == json_type_boolean)
 		{
