@@ -155,11 +155,11 @@ int cfg_load(char *file)
 		}
 		if (strcmp(key, "cache_tts_all") == 0 && type == json_type_boolean)
 		{
-			config.cache_all = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
+			config.cache_all = json_object_get_boolean(val) ? 1 : 0;
 		}
 		if (strcmp(key, "cache_tts_make_index") == 0 && type == json_type_boolean)
 		{
-			config.cache_make_index = (uint8_t)json_object_get_boolean(val) ? 1 : 0;
+			config.cache_make_index = json_object_get_boolean(val) ? 1 : 0;
 		}
 		if (strcmp(key, "ya_tts_folder_id") == 0 && type == json_type_string)
 		{
