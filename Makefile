@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NPM_NAME:=lumimqttd
 PKG_NAME:=$(PKG_NPM_NAME)
-PKG_VERSION:=0.2.9
+PKG_VERSION:=0.2.10
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Alexey Sadkov <alx.v.sadkov@gmail.com>
