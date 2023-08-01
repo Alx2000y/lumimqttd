@@ -53,6 +53,7 @@ typedef struct cfg_t
     char *device_id;
     char *topic;
     char *cache_tts_path;
+    char *ya_tts_voice;
 } cfg_t;
 
 extern cfg_t config;

@@ -15,9 +15,9 @@
 
 
 tts_t tts;
-const char *lvoices[] = {"google", "oksana", "jane", "omazh", "zahar", "ermil", "silaerkan", "erkanyavas", "alyss", "nick", "alena", "filipp", NULL};
-const char *lvoicessex[] = {"F", "F", "F", "F", "M", "M", "F", "M", "F", "M", "F", "M", NULL};
-const char *lvoiceslang[] = {"", "ru_RU", "ru_RU", "ru_RU", "ru_RU", "ru_RU", "tr_TR", "tr_TR", "en_US", "en_US", "ru_RU", "ru_RU", NULL};
+const char *lvoices[] = {"google", "lea","john","amira","madi","alena","filipp","ermil","jane","madirus","omazh","zahar","dasha","julia","lera","marina","alexander","kirill","anton","nigora", NULL};
+const char *lvoicessex[] = {"F", "F","M","F","M","F","M","M","F","M","F","M","F","F","F","F","M","M","M","F", NULL};
+const char *lvoiceslang[] = {"", "de-DE","en-US","kk-KK","kk-KK","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","ru-RU","uz-UZ", NULL};
 const char *lemotions[] = {"good", "neutral", "evil", NULL};
 
 void init_tts()
@@ -27,8 +27,11 @@ void init_tts()
         return;
     }
     char *topic, *message;
+	if(strlen(config.ya_tts_voice)>1)
+	    tts.voice = strdup(config.ya_tts_voice);
+    else
+        tts.voice = strdup("alena");
 
-    tts.voice = strdup("alyss");
     tts.emotion = strdup("neutral");
     tts.speed = 10;
     topic = malloc(strlen(config.topic) + 50);
@@ -232,25 +235,16 @@ void *ttssay_thread(void *args)
         //mkdir(config.cache_tts_path, S_IRWXU);
         char hash[MD5_DIGEST_LENGTH];
         MD5(tts.text, strlen(tts.text), hash);
-        //cachefname = malloc(strlen(config.cache_tts_path) + MD5_DIGEST_LENGTH * 2 + 11);
         sprintf(cachefname, "%stts-%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x-%d.mp3", config.cache_tts_path, 
         hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15], google);
         if (tts.updatecache == 0 && (file = fopen(cachefname, "r")))
         {
             fclose(file);
-            if(google != 0) {
 #ifdef USE_MPD
-                mpd_play(cachefname);
+             mpd_play(cachefname);
 #else
-                call_play(cachefname,strlen(cachefname),1);
+            call_play(cachefname,strlen(cachefname),1);
 #endif
-            }else{
-                char *sst = malloc(strlen(cachefname) + 43);
-                sprintf(sst, "aplay -traw -c1 -r48000 -fS16_LE -D alert %s", cachefname);
-                system(sst);
-                free(sst);
-            }
-
             free(cachefname);
             return 1;
         }
@@ -291,8 +285,8 @@ void *ttssay_thread(void *args)
         _syslog(LOG_DEBUG, "get: %s\n\n", file);
 
     }else{
-        sprintf(file, "POST /speech/v1/tts:synthesize HTTP/1.1\r\nHost: tts.api.cloud.yandex.net\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\nAuthorization: Api-Key %s\r\n\r\nlang=ru-RU&folderId=%s&voice=%s&emotion=%s&speed=%d.%d&format=lpcm&sampleRateHertz=48000&text=%s\r\n", 
-            strlen(config.ya_tts_folder_id) + strlen(temp) + 78 + 3 + 7 + strlen(tts.emotion) + strlen(tts.voice),
+        sprintf(file, "POST /speech/v1/tts:synthesize HTTP/1.1\r\nHost: tts.api.cloud.yandex.net\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\nAuthorization: Api-Key %s\r\n\r\nlang=ru-RU&folderId=%s&voice=%s&emotion=%s&speed=%d.%d&format=mp3&sampleRateHertz=48000&text=%s\r\n", 
+            strlen(config.ya_tts_folder_id) + strlen(temp) + 78 + 2 + 7 + strlen(tts.emotion) + strlen(tts.voice),
             config.ya_tts_api_key, config.ya_tts_folder_id, tts.voice, tts.emotion, (int)(tts.speed / 10), tts.speed % 10, temp);
         _syslog(LOG_DEBUG, "post: %s\n\n", file);
     }
@@ -338,6 +332,7 @@ void *ttssay_thread(void *args)
     }
 
     SSL_write(ssl, file, strlen(file));
+    _syslog(LOG_DEBUG, "open file: %s\n\n", cachefname);
     FILE *tfd = fopen(cachefname, "w+");
     int z, i, k, chunk_length = 0;
 
@@ -359,9 +354,10 @@ void *ttssay_thread(void *args)
         //_syslog(LOG_ERR, "server says: %s\n", buf);
     } while(start==0);
 
-
     chunk = strstr(start + 4, "\r\n");
     chunk_length = (int)strtol(start + 4, NULL, 16);
+	_syslog(LOG_DEBUG, "header recieved, first chunk size: %d\n\n", chunk_length);
+
     recv_size = z - ((chunk + 2) - (unsigned char *)buf);
 	
 	if(chunk_length==0) {
@@ -439,18 +435,11 @@ void *ttssay_thread(void *args)
     close(sock);
     free(file);
     fclose(tfd);
-    if(google != 0) {
 #ifdef USE_MPD
-        mpd_play(cachefname);
+    mpd_play(cachefname);
 #else
-        call_play(cachefname,strlen(cachefname),1);
+    call_play(cachefname,strlen(cachefname),1);
 #endif
-    }else{
-        char *sst = malloc(strlen(cachefname) + 43);
-        sprintf(sst, "aplay -traw -c1 -r48000 -fS16_LE -D alert %s", cachefname);
-        system(sst);
-        free(sst);
-    }
     _syslog(LOG_INFO, "tts end\n");
     free(cachefname);
     tts_cache(config.cache_all);

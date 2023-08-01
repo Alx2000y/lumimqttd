@@ -50,6 +50,7 @@ int cfg_load(char *file)
 	config.cputemp_file = strdup("/sys/devices/virtual/thermal/thermal_zone0/temp");
     config.led_effect=1;
     config.led_duration=1;
+    config.ya_tts_voice = strdup("alena");
 	config.ya_tts_api_key = strdup("");
 	config.ya_tts_folder_id = strdup("");
     config.cache_tts_path = strdup("");
@@ -148,6 +149,10 @@ int cfg_load(char *file)
 		if (strcmp(key, "ya_tts_api_key") == 0 && type == json_type_string)
 		{
 			config.ya_tts_api_key = strdup(json_object_get_string(val));
+		}
+		if (strcmp(key, "ya_tts_voice") == 0 && type == json_type_string)
+		{
+			config.ya_tts_voice = strdup(json_object_get_string(val));
 		}
 		if (strcmp(key, "cache_tts_path") == 0 && type == json_type_string)
 		{

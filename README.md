@@ -63,14 +63,14 @@ are user by Home Assistant to discover entities.
 `readinterval` value in seconds to send changed data
 
 To use yandex voices for TTS, you need to specify `ya_tts_api_key` and `ya_tts_folder_id` from the Yandex cloud console.
-
-`led_effect` one of `none` `fade` `wheel` `transition`
-`led_duration` number of seconds
-
+`ya_tts_voice` select voice used by default
 
 `cache_tts_path` path to save tts cache files
 `cache_tts_all` cache all tts phrases, default - save only with json param `"cache": 1`
 `cache_tts_make_index` on save new cache file add filename and phrase to text file tts-index.txt 
+
+`led_effect` one of `none` `fade` `wheel` `transition`
+`led_duration` number of seconds
 
 `disable`: array, with some values `bt` `ble` `illuminance` or `cputemp` to disable
 

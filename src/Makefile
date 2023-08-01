@@ -6,6 +6,9 @@ ifndef CFLAGS
 CFLAGS = -g -I.
 #CFLAGS = -g3 -o0 -ggdb -g -I. 
 endif
+
+#CFLAGS += -ggdb3 -ggdb
+CFLAGS +=  -pedantic
 TARGET = lumimqttd 
 LIBS+= -lmosquitto -lasound -ljson-c -lpthread -lssl -lcrypto
 SOURCES = cfg.c log.c lumimqttd.c tts.c volume.c leds.c
