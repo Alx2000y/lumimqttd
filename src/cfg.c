@@ -15,7 +15,7 @@ char *getmac()
 	char *buf = malloc(13);
 	struct ifreq s;
 	int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-	strcpy(s.ifr_name, "wlan0");
+	strcpy(s.ifr_name, "phy0-sta0");
 	if (0 == ioctl(fd, SIOCGIFHWADDR, &s))
 	{
 		sprintf(buf, "%02x%02x%02x%02x%02x%02x",
@@ -47,9 +47,9 @@ int cfg_load(char *file)
 	config.green_led = strdup("/sys/class/leds/green/brightness");
 	config.blue_led = strdup("/sys/class/leds/blue/brightness");
 	config.lux_file = strdup("/sys/bus/iio/devices/iio:device0/in_voltage5_raw");
-	config.cputemp_file = strdup("/sys/devices/virtual/thermal/thermal_zone0/temp");
+	config.cputemp_file = strdup("/sys/devices/platform/soc/2100000.bus/2198000.adc/iio:device0/in_temp_input");
     config.led_effect=1;
-    config.led_duration=1;
+    config.led_duration=5;
     config.ya_tts_voice = strdup("alena");
 	config.ya_tts_api_key = strdup("");
 	config.ya_tts_folder_id = strdup("");
