@@ -311,7 +311,7 @@ void auto_discover(void)
 	    sprintf(topic, "\"device\": {\"identifiers\": [\"xiaomi_gateway_%s\"] ,\"name\": \"xiaomi_gateway_%s\", \"sw_version\": \"%s\", \"model\": \"Xiaomi Gateway\", \"manufacturer\": \"Xiaomi\"},\"availability_topic\": \"%sstatus\",",
         config.device_id, config.device_id, VERSION, config.topic);
 
-        sprintf(message, "{\"name\": \"Cpu Temperature %s\", \"unique_id\": \"%s_cputemp\", \"schema\": \"json\", %s \"state_topic\": \"%scputemp\",\"device_class\": \"temperature\",\"unit_of_measurement\": \"C\"}",
+        sprintf(message, "{\"name\": \"Cpu Temperature %s\", \"unique_id\": \"%s_cputemp\", \"schema\": \"json\", %s \"state_topic\": \"%scputemp\",\"device_class\": \"temperature\",\"unit_of_measurement\": \"°C\"}",
             config.device_id, config.device_id, topic, config.topic);
         sprintf(topic, "homeassistant/sensor/%s/cputemp/config", config.device_id);
         if (!mqtt_publish(topic, message))
